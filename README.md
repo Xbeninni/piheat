@@ -1,5 +1,7 @@
 # Pi Temperature Monitor
 
+![Pi Temperature Monitor](screenshots/piheat.jpg)
+
 A modern web application for monitoring Raspberry Pi CPU temperature with real-time charts, historical data analysis, and a beautiful responsive interface.
 
 ## Features
