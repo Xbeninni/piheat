@@ -31,9 +31,23 @@ A modern web application for monitoring Raspberry Pi CPU temperature with real-t
 
 ## Quick Installation
 
-### Automated Deployment (Recommended)
+### One-Command Installation (Recommended)
 
-The deploy script handles everything automatically:
+Install PiHeat directly from the latest release with automatic architecture detection:
+
+```bash
+curl -sSL https://gist.githubusercontent.com/Xbeninni/758f885a3df2796f534a3b3f833f3e3b/raw/install.sh | bash
+```
+
+This command will:
+- Auto-detect your ARM architecture (ARM64 or ARM32)
+- Download the latest release binary from GitHub
+- Install as a system-wide service that persists after logout
+- Create management scripts for easy service control
+
+### Manual Deployment
+
+If you prefer to clone the repository:
 
 ```bash
 # Clone the repository
@@ -42,9 +56,6 @@ cd piheat
 
 # Deploy as system service (requires sudo)
 sudo ./deploy.sh
-
-# Or deploy as user service
-./deploy.sh
 ```
 
 ### Manual Installation
@@ -70,12 +81,17 @@ go build -o piheat main.go
    - **Auto-refresh** - Updates every 5 seconds
    - **Responsive Design** - Works on all devices
 
-3. **Service Management** (when deployed with deploy.sh):
+3. **Service Management** (system-wide service):
    ```bash
-   ./start.sh    # Start the service
-   ./stop.sh     # Stop the service  
-   ./status.sh   # Check service status
-   ./logs.sh     # View live logs
+   sudo ./start.sh    # Start the service
+   sudo ./stop.sh     # Stop the service  
+   sudo ./status.sh   # Check service status
+   sudo ./logs.sh     # View live logs
+   
+   # Or use systemctl directly:
+   sudo systemctl start piheat.service
+   sudo systemctl stop piheat.service
+   sudo systemctl status piheat.service
    ```
 
 ## API Endpoints
