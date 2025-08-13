@@ -41,10 +41,12 @@ if [[ $EUID -eq 0 ]]; then
     print_warning "Running as root. Service will be installed system-wide."
     SERVICE_DIR="/etc/systemd/system"
     SERVICE_USER="piheat"
+    INSTALL_DIR="/opt/piheat"
 else
     print_status "Running as regular user. Service will be installed for current user."
     SERVICE_DIR="$HOME/.config/systemd/user"
     SERVICE_USER="$USER"
+    INSTALL_DIR="$HOME/.local/piheat"
     mkdir -p "$SERVICE_DIR"
 fi
 
@@ -71,6 +73,14 @@ case $ARCH in
 esac
 
 print_status "Detected architecture: $ARCH, using binary: $BINARY_NAME"
+
+# Create installation directory
+print_status "Creating installation directory: $INSTALL_DIR"
+if [[ $EUID -eq 0 ]]; then
+    mkdir -p "$INSTALL_DIR"
+else
+    mkdir -p "$INSTALL_DIR"
+fi
 
 # Check if binary exists
 if [[ ! -f "$BINARY_NAME" ]]; then
@@ -159,11 +169,19 @@ fi
 # Make binary executable
 chmod +x "$BINARY_NAME"
 
+# Copy files to installation directory
+print_status "Installing files to $INSTALL_DIR"
+cp "$BINARY_NAME" "$INSTALL_DIR/"
+if [[ -f "temperature.db" ]]; then
+    cp "temperature.db" "$INSTALL_DIR/"
+    print_status "Existing database copied to installation directory"
+fi
+
 # Create user if running as root and user doesn't exist
 if [[ $EUID -eq 0 ]] && [[ "$SERVICE_USER" != "root" ]]; then
     if ! id "$SERVICE_USER" &>/dev/null; then
         print_status "Creating user: $SERVICE_USER"
-        useradd --system --home-dir "$SCRIPT_DIR" --shell /bin/false "$SERVICE_USER"
+        useradd --system --home-dir "$INSTALL_DIR" --shell /bin/false "$SERVICE_USER"
     fi
 fi
 
@@ -185,8 +203,8 @@ Wants=network.target
 Type=simple
 User=$SERVICE_USER
 Group=$SERVICE_USER
-WorkingDirectory=$SCRIPT_DIR
-ExecStart=$SCRIPT_DIR/$BINARY_NAME
+WorkingDirectory=$INSTALL_DIR
+ExecStart=$INSTALL_DIR/$BINARY_NAME
 Restart=always
 RestartSec=5
 StandardOutput=journal
@@ -198,7 +216,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=$SCRIPT_DIR
+ReadWritePaths=$INSTALL_DIR
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
@@ -208,7 +226,7 @@ WantedBy=multi-user.target
 EOF
 
     # Set ownership
-    chown "$SERVICE_USER:$SERVICE_USER" "$SCRIPT_DIR" -R
+    chown "$SERVICE_USER:$SERVICE_USER" "$INSTALL_DIR" -R
     
     # Reload systemd and enable service
     systemctl daemon-reload
@@ -245,8 +263,8 @@ After=default.target
 
 [Service]
 Type=simple
-WorkingDirectory=$SCRIPT_DIR
-ExecStart=$SCRIPT_DIR/$BINARY_NAME
+WorkingDirectory=$INSTALL_DIR
+ExecStart=$INSTALL_DIR/$BINARY_NAME
 Restart=always
 RestartSec=5
 StandardOutput=journal
@@ -393,6 +411,7 @@ fi
 echo ""
 print_status "Web Interface: http://localhost:8082"
 echo ""
-print_status "Database: $SCRIPT_DIR/temperature.db"
-print_status "Binary: $SCRIPT_DIR/$BINARY_NAME"
+print_status "Installation Directory: $INSTALL_DIR"
+print_status "Database: $INSTALL_DIR/temperature.db"
+print_status "Binary: $INSTALL_DIR/$BINARY_NAME"
 echo ""
