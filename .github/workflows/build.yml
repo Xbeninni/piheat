@@ -1,0 +1,51 @@
+name: Build ARM Binary
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.18'
+    
+    - name: Build for ARM64
+      run: |
+        GOOS=linux GOARCH=arm64 go build -o piheat-arm64 .
+        
+    - name: Build for ARM (32-bit)
+      run: |
+        GOOS=linux GOARCH=arm go build -o piheat-arm .
+    
+    - name: Upload ARM64 artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: piheat-arm64
+        path: piheat-arm64
+        
+    - name: Upload ARM artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: piheat-arm
+        path: piheat-arm
+        
+    - name: Release binaries
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          piheat-arm64
+          piheat-arm
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
