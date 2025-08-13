@@ -274,6 +274,14 @@ StandardError=journal
 WantedBy=default.target
 EOF
 
+    # Enable lingering for user to keep service running after logout
+    if command -v loginctl &> /dev/null; then
+        print_status "Enabling lingering for user $USER to keep service running after logout..."
+        sudo loginctl enable-linger "$USER" || print_warning "Could not enable lingering. Service may stop on logout."
+    else
+        print_warning "loginctl not available. User service may stop on logout."
+    fi
+    
     # Reload systemd and enable service
     systemctl --user daemon-reload
     systemctl --user enable piheat.service
